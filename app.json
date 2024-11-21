@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "TmoApp",
+    "slug": "TmoApp",
+    "version": "1.0.0",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "extra": {
+      "googleCloudVisionApiKey": "AIzaSyCkKeGa5a5Co-bEX1y92qf56ymLn-9Ht2Q"
+    },
+    "android": {
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE"
+      ],
+      "package": "com.yourname.tmoapp"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourname.tmoapp"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "assets": [
+      "./assets/*"
+    ],
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "packagerOpts": {
+      "assetExts": [
+        "db",
+        "mp4",
+        "jpg",
+        "png",
+        "svg",
+        "ttf",
+        "otf",
+        "wav",
+        "mp3"
+      ]
+    }
+  }
+}
