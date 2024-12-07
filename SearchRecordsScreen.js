@@ -1,36 +1,65 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
+import { useRecords } from './RecordsContext';
 
 const SearchRecordsScreen = () => {
-  const [records, setRecords] = useState([]);
+  const { records } = useRecords();
+  const [filteredRecords, setFilteredRecords] = useState(records);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    const lowerCaseQuery = query.toLowerCase();
+    const filtered = records.filter(
+      (item) =>
+        item.driver_name.toLowerCase().includes(lowerCaseQuery) ||
+        item.user_name.toLowerCase().includes(lowerCaseQuery)
+    );
+    setFilteredRecords(filtered);
+  };
 
   useEffect(() => {
-    fetch('http:///192.168.236.73/etiket/fetch_records.php')
-      .then(response => response.json())
-      .then(data => setRecords(data))
-      .catch(error => console.error('Error fetching records:', error));
-  }, []);
+    setFilteredRecords(records);
+  }, [records]);
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Traffic Violation Records</Text>
-      <View style={styles.table}>
-        <View style={styles.tableHeader}>
-          <Text style={styles.headerCell}>Name</Text>
-          <Text style={styles.headerCell}>Violation</Text>
-          <Text style={styles.headerCell}>Date</Text>
-          <Text style={styles.headerCell}>Location</Text>
-        </View>
-        {records.map((item, index) => (
-          <View key={index} style={styles.tableRow}>
-            <Text style={styles.cell}>{item.name}</Text>
-            <Text style={styles.cell}>{item.violation_type}</Text>
-            <Text style={styles.cell}>{item.date}</Text>
-            <Text style={styles.cell}>{item.location}</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Search Records</Text>
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search by driver's name or officer name..."
+        value={searchQuery}
+        onChangeText={handleSearch}
+      />
+      {/* Table for Displaying Records */}
+      <ScrollView horizontal>
+        <View style={styles.tableContainer}>
+          {/* Table Header */}
+          <View style={styles.tableRow}>
+            <Text style={[styles.tableHeader, styles.cellMedium]}>TMO ID</Text>
+            <Text style={[styles.tableHeader, styles.cellMedium]}>Officer Name</Text>
+            <Text style={[styles.tableHeader, styles.cellMedium]}>Driver Name</Text>
+            <Text style={[styles.tableHeader, styles.cellMedium]}>License No</Text>
+            <Text style={[styles.tableHeader, styles.cellMedium]}>Violation Date</Text>
           </View>
-        ))}
-      </View>
-    </ScrollView>
+
+          {/* Table Rows */}
+          {filteredRecords.map((item, index) => (
+            <View key={index} style={styles.tableRow}>
+              <Text style={[styles.tableCell, styles.cellMedium]}>{item.user_tmoid}</Text>
+              <Text style={[styles.tableCell, styles.cellMedium]}>{item.user_name}</Text>
+              <Text style={[styles.tableCell, styles.cellMedium]}>{item.driver_name}</Text>
+              <Text style={[styles.tableCell, styles.cellMedium]}>{item.license_no}</Text>
+              <Text style={[styles.tableCell, styles.cellMedium]}>{item.violation_date}</Text>
+            </View>
+          ))}
+
+          {filteredRecords.length === 0 && (
+            <Text style={styles.noDataText}>No records match your search.</Text>
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -39,40 +68,58 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     padding: 20,
+    paddingTop: 50,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
     marginBottom: 20,
-  },
-  table: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#D3D3D3',
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#5d6063',
-    padding: 10,
-  },
-  headerCell: {
-    flex: 1,
-    color: '#FFF',
-    fontWeight: 'bold',
     textAlign: 'center',
+    color: '#333',
+  },
+  searchInput: {
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    marginBottom: 20,
+    fontSize: 16,
+  },
+  tableContainer: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    overflow: 'hidden',
+    backgroundColor: '#f9f9f9',
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#D3D3D3',
-  },
-  cell: {
-    flex: 1,
+    borderColor: '#ddd',
     padding: 10,
+  },
+  tableHeader: {
+    fontWeight: 'bold',
+    backgroundColor: '#f1f1f1',
     textAlign: 'center',
-    flexWrap: 'wrap',
-    maxWidth: 100,  // Adjust as needed
+    color: '#333',
+  },
+  tableCell: {
+    textAlign: 'center',
+    color: '#555',
+  },
+  cellLarge: {
+    width: 150,
+  },
+  cellMedium: {
+    width: 120,
+  },
+  noDataText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#777',
+    marginTop: 10,
   },
 });
 

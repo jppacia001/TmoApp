@@ -3,9 +3,9 @@ import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView,
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
+import { format } from 'date-fns'; // For date formatting
 
 const SignUpScreen = ({ navigation }) => {
-  const [tmoId, setTmoId] = useState('');
   const [name, setName] = useState('');
   const [birthday, setBirthday] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -23,19 +23,23 @@ const SignUpScreen = ({ navigation }) => {
     }
 
     try {
-      const response = await axios.post('http:///192.168.100.73/etiket/signup.php', {
-        tmoId,
+      const response = await axios.post('http://192.168.239.73/etiket/signup.php', {
         name,
         birthday,
         gender,
         address,
         email,
-        password
+        password,
       });
 
-      if (response.status === 200) {
-        Alert.alert('Registration successful');
-        navigation.navigate('Login'); // Navigate back or to another screen
+      if (response.status === 200 && response.data.message === "User registered successfully") {
+        Alert.alert(
+          'Registration successful',
+          `Your TMO OFFICER ID: ${response.data.tmoId}`,
+          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        );
+      } else {
+        Alert.alert('Registration failed', response.data.message);
       }
     } catch (error) {
       Alert.alert('Registration failed', error.message);
@@ -45,19 +49,17 @@ const SignUpScreen = ({ navigation }) => {
   const onChangeDate = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
-      setBirthday(selectedDate.toLocaleDateString());
+      setBirthday(format(selectedDate, 'yyyy-MM-dd')); // Format date as YYYY-MM-DD
     }
   };
 
   const pickImage = async () => {
-    // Request permission to access the camera and photo library
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Sorry, we need camera roll permissions to make this work!');
       return;
     }
 
-    // Launch the image picker
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -65,10 +67,8 @@ const SignUpScreen = ({ navigation }) => {
       quality: 1,
     });
 
-    console.log('Image Picker Result:', result); // Log the result to debug
-
     if (!result.canceled) {
-      setProfileImage(result.uri); // Update the state with the chosen image URI
+      setProfileImage(result.uri);
     } else {
       Alert.alert('Image selection canceled');
     }
@@ -86,13 +86,6 @@ const SignUpScreen = ({ navigation }) => {
           <Text style={styles.addButtonText}>Add profile pic</Text>
         </TouchableOpacity>
       </View>
-      <TextInput
-        style={styles.input}
-        placeholder="TMO OFFICER ID NUMBER"
-        value={tmoId}
-        onChangeText={setTmoId}
-        keyboardType="numeric"
-      />
       <TextInput
         style={styles.input}
         placeholder="Full Name (Ex. Juan A. Dela Cruz)"
@@ -138,7 +131,7 @@ const SignUpScreen = ({ navigation }) => {
       />
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder="Username"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"

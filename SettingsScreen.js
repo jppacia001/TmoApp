@@ -20,7 +20,7 @@ const SettingsScreen = ({ navigation }) => {
 
     const fetchUserDetails = async (userId) => {
         try {
-            const response = await fetch(`http:///192.168.100.73/etiket/get_user_details.php?id=${userId}`);
+            const response = await fetch(`http://192.168.239.73/etiket/get_user_details.php?id=${userId}`);
             const result = await response.json();
 
             if (result.success) {
@@ -36,7 +36,7 @@ const SettingsScreen = ({ navigation }) => {
 
     const handleSave = async () => {
         try {
-            const response = await fetch('http:///192.168.100.73/etiket/update_profile.php', {
+            const response = await fetch('http://192.168.239.73/etiket/update_profile.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -1,57 +1,63 @@
 <?php
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "etiket";
+header('Content-Type: application/json');
 
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
+$data = json_decode(file_get_contents('php://input'), true);
 
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+$requiredFields = ['driver_name', 'address', 'license_no', 'violation_type', 'violation_date', 'violation_place'];
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Retrieve POST data
-    $driverName = $_POST['driverName'];
-    $address = $_POST['address'];
-    $licenseNo = $_POST['licenseNo'];
-    $licenseExpiryDate = $_POST['licenseExpiryDate']; // Format: YYYY-MM-DD
-    $dateOfBirth = $_POST['dateOfBirth']; // Format: YYYY-MM-DD
-    $remarks = $_POST['remarks'];
-    $violationType = $_POST['violationType'];
-    $violationDate = $_POST['violationDate']; // Format: YYYY-MM-DD
-    $violationTime = $_POST['violationTime']; // Format: HH:MM:SS
-    $violationPlace = $_POST['violationPlace'];
-    $ownerOfVehicle = $_POST['ownerOfVehicle'];
-    $plateNumber = $_POST['plateNumber'];
-    $vehicleRegistrationNumber = $_POST['vehicleRegistrationNumber'];
-    $colorOfVehicle = $_POST['colorOfVehicle'];
-    $typeOfVehicle = $_POST['typeOfVehicle'];
-    $codingStickerNo = $_POST['codingStickerNo'];
-    $insurancePolicyNumber = $_POST['insurancePolicyNumber'];
-    $toda = $_POST['toda'];
-    $violationCount = $_POST['violationCount'];
-
-    // Prepare SQL statement
-    $stmt = $conn->prepare("INSERT INTO violations (driverName, address, licenseNo, licenseExpiryDate, dateOfBirth, remarks, violationType, violationDate, violationTime, violationPlace, ownerOfVehicle, plateNumber, vehicleRegistrationNumber, colorOfVehicle, typeOfVehicle, codingStickerNo, insurancePolicyNumber, toda, violationCount) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-    // Bind parameters
-    $stmt->bind_param("sssssssssssssssssss", $driverName, $address, $licenseNo, $licenseExpiryDate, $dateOfBirth, $remarks, $violationType, $violationDate, $violationTime, $violationPlace, $ownerOfVehicle, $plateNumber, $vehicleRegistrationNumber, $colorOfVehicle, $typeOfVehicle, $codingStickerNo, $insurancePolicyNumber, $toda, $violationCount);
-
-    // Execute statement
-    if ($stmt->execute()) {
-        echo "New record created successfully";
-    } else {
-        echo "Error: " . $stmt->error;
+foreach ($requiredFields as $field) {
+    if (empty($data[$field])) {
+        echo json_encode(['success' => false, 'message' => "Field '$field' is required."]);
+        exit;
     }
-
-    // Close statement
-    $stmt->close();
 }
 
-// Close connection
-$conn->close();
+if (!preg_match('/^[A-Z]\d{2}-\d{2}-\d{6}$/', $data['license_no'])) {
+    echo json_encode(['success' => false, 'message' => "Invalid license number format."]);
+    exit;
+}
+
+if (!empty($data['phone_number']) && !preg_match('/^\+63\d{10}$/', $data['phone_number'])) {
+    echo json_encode(['success' => false, 'message' => "Invalid phone number format."]);
+    exit;
+}
+
+if (!empty($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+    echo json_encode(['success' => false, 'message' => "Invalid email format."]);
+    exit;
+}
+
+$mysqli = new mysqli('localhost', 'root', '', 'etiket');
+
+if ($mysqli->connect_error) {
+    echo json_encode(['success' => false, 'message' => "Database connection failed: " . $mysqli->connect_error]);
+    exit;
+}
+
+$stmt = $mysqli->prepare("INSERT INTO traffic_records (driver_name, address, license_no, license_expiry_date, date_of_birth, remarks, violation_type, violation_date, violation_place, violation_latitude, violation_longitude, phone_number, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+$stmt->bind_param(
+    'ssssssssssdds',
+    $data['driver_name'],
+    $data['address'],
+    $data['license_no'],
+    $data['license_expiry_date'],
+    $data['date_of_birth'],
+    $data['remarks'],
+    $data['violation_type'],
+    $data['violation_date'],
+    $data['violation_place'],
+    $data['violation_latitude'],
+    $data['violation_longitude'],
+    $data['phone_number'],
+    $data['email']
+);
+
+if ($stmt->execute()) {
+    echo json_encode(['success' => true]);
+} else {
+    echo json_encode(['success' => false, 'message' => "Database error: " . $stmt->error]);
+}
+
+$stmt->close();
+$mysqli->close();
 ?>
